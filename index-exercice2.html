@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload et Récupération de Fichiers</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}"> <!-- CSRF Token -->
+    <style>
+        /* Styles généraux */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #6dd5ed, #2193b0);
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Titres */
+h1, h2 {
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Boutons stylisés */
+button {
+    background-color: #ffcc29;
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin: 10px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    background-color: #ffdb4d;
+    transform: scale(1.05);
+}
+
+/* Input de fichier stylisé */
+input[type="file"] {
+    display: block;
+    margin: 10px auto;
+    padding: 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+input[type="file"]::file-selector-button {
+    background: #fff;
+    color: #2193b0;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: #ddd;
+}
+
+/* Liste des fichiers */
+ul {
+    list-style: none;
+    padding: 0;
+    max-width: 400px;
+    margin: auto;
+}
+
+li {
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    transition: 0.3s;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+li:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+    </style>
+</head>
+<body>
+    <h1>Uploader un fichier</h1>
+    <input type="file" id="fileInput">
+    <button id="uploadBtn">Téléverser</button>
+
+    <h2>Liste des fichiers</h2>
+    <button id="fetchFilesBtn">Afficher les fichiers</button>
+    <ul id="fileList"></ul>
+
+    <script>
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fetchFilesBtn = document.getElementById('fetchFilesBtn');
+        const fileList = document.getElementById('fileList');
+        const fileInput = document.getElementById('fileInput');
+
+        // On récupère le token CSRF nécessaire pour les requêtes POST
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Fonction pour télécharger un fichier
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Veuillez sélectionner un fichier.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert("Erreur lors de l'upload : " + error.message);
+            }
+        });
+
+        // Fonction pour récupérer la liste des fichiers
+        fetchFilesBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/files');
+                const result = await response.json();
+
+                fileList.innerHTML = ""; // On vide la liste avant d'afficher les fichiers
+                result.files.forEach(file => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = file;
+                    fileList.appendChild(listItem);
+                });
+            } catch (error) {
+                alert("Erreur lors de la récupération des fichiers : " + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
