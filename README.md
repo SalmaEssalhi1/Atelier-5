@@ -396,3 +396,94 @@ function loadRooms() {
 ### Conclusion
 Cet exercice permet de gérer facilement les salles avec une API RESTful et une interface simple pour l'administration via un frontend en HTML et JavaScript. Les actions de CRUD sur les salles sont toutes prises en charge par l'API Laravel.
 
+## Exercice 5
+### Description 
+Cet exercice permet de suivre la quantité de produits dans un stock en temps réel. Lorsqu'un produit est ajouté, modifié ou supprimé, les autres utilisateurs sont immédiatement informés via des notifications en temps réel grâce à l'utilisation de Pusher. Le système permet également de visualiser les informations de stock sous forme de graphiques et d'effectuer des actions CRUD (Create, Read, Update, Delete) sur les stocks.
+### Structure du Code
+**1. StockController.php**
+Le StockController est responsable de la gestion des stocks. Il permet d'ajouter, de modifier, et de supprimer des produits tout en émettant des événements de mise à jour via Pusher.
+```js
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'product_name' => 'required|string|max:255',
+        'quantity' => 'required|integer|min:0',
+    ]);
+
+    $stock = Stock::create([
+        'product_name' => $validated['product_name'],
+        'quantity' => $validated['quantity'],
+    ]);
+
+    // Diffuse l'événement de mise à jour
+    broadcast(new StockUpdated($stock))->toOthers();
+
+    return redirect()->back();
+}
+
+```
+**2. Événements - StockUpdated**
+Un événement StockUpdated est émis chaque fois qu'un produit est ajouté, modifié ou supprimé. Cet événement est ensuite diffusé à tous les clients connectés via Pusher.
+```js
+public function broadcastOn()
+{
+    return new Channel('stocks');
+}
+
+
+```
+**3. Routes (web.php)**
+Les routes du projet définissent les actions pour afficher, ajouter, modifier et supprimer des stocks.
+
+```js
+Route::post('/stocks', [StockController::class ,'store']);
+
+```
+**4. Broadcasting Configuration**
+Le fichier broadcasting.php configure le conducteur de diffusion par défaut, ici ***Pusher***, ainsi que les options de connexion.
+
+```js
+'pusher' => [
+    'driver' => 'pusher',
+    'key' => env('af0b9688874b525117ca'),
+    'secret' => env('9daacb798421ce564886'),
+    'app_id' => env('1963842'),
+    'options' => [
+        'host' => env('PUSHER_HOST') ?: 'api-'.env('eu').'.pusher.com',
+        'port' => env('PUSHER_PORT', 443),
+        'scheme' => env('PUSHER_SCHEME', 'https'),
+        'encrypted' => true,
+        'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
+    ],
+],
+
+```
+### Fonctionnalités
+#### 1. Ajout de Produits
+=> Permet d'ajouter un produit avec son nom et sa quantité.
+
+=> La quantité est mise à jour en temps réel via Pusher.
+
+#### 2. Modification de Quantité
+=> Permet de mettre à jour la quantité d'un produit déjà existant.
+
+=> L'interface se met à jour en temps réel pour tous les utilisateurs.
+
+#### 3. Suppression de Produits
+=> Permet de supprimer un produit du stock.
+
+=> La suppression est reflétée instantanément sur tous les tableaux de bord connectés.
+
+#### 4. Affichage en Temps Réel
+=> Utilisation de Highcharts pour afficher la quantité des produits sous forme de graphiques en barres.
+
+=> Les graphiques se mettent à jour automatiquement dès qu'une modification est effectuée.
+
+=> Fichier ***stocks.blade.php***, qui affiche les produits et leur quantité en temps réel.
+
+<img src="https://github.com/user-attachments/assets/8b42c362-8040-4726-b553-e50c587c095b" alt="Image" width="600" />
+<img src="https://github.com/user-attachments/assets/26568ffc-4391-4cdf-8397-98691e316ab6" alt="Image" width="700" />
+<img src="https://github.com/user-attachments/assets/4e0bb2d9-5b4b-4f13-a499-566ff5ac6dd0" alt="Image" width="700" />
+
+## Conclusion
+Cet exercice fournit une solution efficace pour suivre et gérer les stocks en temps réel, avec une interface utilisateur réactive grâce à l'intégration de Pusher et Highcharts. Il permet de gérer les produits, afficher des graphiques en temps réel et mettre à jour les informations de manière fluide.
